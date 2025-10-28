@@ -1,0 +1,9 @@
+[project]
+name = "de-assignment-intelligencia-dlt"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dlt[duckdb,workspace]>=1.18.0",
+]
