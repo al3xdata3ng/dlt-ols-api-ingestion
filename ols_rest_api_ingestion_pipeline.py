@@ -1,5 +1,6 @@
 import dlt
 from dlt.sources.rest_api import RESTAPIConfig, rest_api_resources
+from urllib.parse import quote
 
 
 @dlt.source
@@ -21,7 +22,8 @@ def efo_terms_source():
         "resource_defaults": {
             # Each ontology term has a unique IRI — use it as the PK
             "primary_key": "iri",
-            "write_disposition": "merge"
+            "write_disposition": "merge",
+            "max_table_nesting": 2
         },
         "resources": [
             {
@@ -33,8 +35,16 @@ def efo_terms_source():
                     },
                     # OLS wraps data in _embedded.terms, so extract from there
                     "data_selector": "_embedded.terms"
+                    # "columns": ["iri", "label", "ontology_name", "ontology_iri", "is_obsolete", "short_form", "obo_id", "_links__parents__href"],
                 }
-            }
+            },
+            # {
+            #     "name": "efo_terms_parents",
+            #     "endpoint": {
+            #         "path": "terms/{resources.efo_terms.short_form}/parents"
+            #         # quote(quote({resources.efo_terms.short_form}, safe=""), safe="")
+            #     }
+            # },            
         ]
     }
 
@@ -49,7 +59,7 @@ def load_efo_terms():
     """
     pipeline = dlt.pipeline(
         pipeline_name="efo_terms_pipeline",
-        destination="duckdb",        # or 'bigquery', 'snowflake', etc.
+        destination="postgres",        # or 'bigquery', 'snowflake', etc.
         dataset_name="efo_terms_dataset"
     )
 
