@@ -4,7 +4,8 @@ from dlt.common.pipeline import get_dlt_pipelines_dir
 from dlt.sources.helpers.rest_client.paginators import JSONLinkPaginator
 from dlt.sources.helpers.rest_client import RESTClient
 from pydantic import BaseModel
-from typing import Optional, List
+from dlt.common.libs.pydantic import DltConfig
+from typing import Optional, List, ClassVar
 from dlt.common.runtime.collector import TqdmCollector
 import logging
 import sys
@@ -18,10 +19,10 @@ run_params = {
     "WRITE_DISPOSITION": "merge",
     "MAX_NESTING": 1,
     "SCHEMA_CONTRACT": {"tables": "evolve", "columns": "evolve", "data_type": "evolve"},
-    "MAX_ITEMS": 50,
-    "MAX_TIME": 60,
-    "PIPELINE_NAME": "ols_efo_single_term",
-    "DATASET_NAME": "efo",
+    "MAX_ITEMS": 1000,
+    "MAX_TIME": 120,
+    "PIPELINE_NAME": "ols_efo_nesting",
+    "DATASET_NAME": "test_nesting",
     "DESTINATION": "postgres",
     "REFRESH": "drop_sources",
     "PIPELINE_DIR": os.path.join(get_dlt_pipelines_dir(), "dev")
@@ -64,19 +65,10 @@ class Term(BaseModel):
     ontology_name: Optional[str]
     synonyms: Optional[List[str]]
     parent_url: Optional[str]
+    mesh_ref: Optional[List[str]]
 
-
-class ParentRelation(BaseModel):
-    child_iri: str
-    parent_iri: Optional[str]
-    parent_label: Optional[str]
-    parent_short_form: Optional[str]
-
-
-class Synonym(BaseModel):
-    iri: str
-    synonym: str
-
+class TermWithNesting(Term):
+  dlt_config: ClassVar[DltConfig] = {"skip_nested_types": True}
 
 # --- 3️⃣ Root resource: terms ---
 @dlt.resource(
@@ -84,7 +76,7 @@ class Synonym(BaseModel):
     write_disposition=run_params["WRITE_DISPOSITION"],
     max_table_nesting=run_params["MAX_NESTING"],
     primary_key="iri",
-    columns=Term,
+    columns=TermWithNesting,
     schema_contract=run_params["SCHEMA_CONTRACT"]
 )
 def efo_terms():
@@ -94,13 +86,15 @@ def efo_terms():
     )
     for page in pages:
         for term in page:
+            database_cross_reference = term.get("annotation", {}).get("database_cross_reference", [])
             record = Term(
                 iri=term.get("iri"),
                 label=term.get("label"),
                 short_form=term.get("short_form"),
                 ontology_name=term.get("ontology_name"),
                 synonyms=term.get("synonyms"),
-                parent_url=term.get("_links", {}).get("parents", {}).get("href")
+                parent_url=term.get("_links", {}).get("parents", {}).get("href"),
+                mesh_ref=[ref for ref in database_cross_reference if "MESH" in ref]
             )
             yield record.model_dump()
 
@@ -145,7 +139,9 @@ if __name__ == "__main__":
     )
 
     load_info = pipeline.run(
-                              efo_terms_parents().add_limit(max_items=run_params["MAX_ITEMS"], max_time=run_params["MAX_TIME"])                      
+                              efo_terms().add_limit(max_items=run_params["MAX_ITEMS"]
+                                                    , max_time=run_params["MAX_TIME"]
+                                                    ) 
                              , refresh=run_params["REFRESH"]
                              )
     logger.info("Pipeline finished successfully")
