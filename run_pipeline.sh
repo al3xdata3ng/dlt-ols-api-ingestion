@@ -25,6 +25,6 @@ echo "Waiting for PostgreSQL to be ready..."
 sleep 10
 
 echo "=== 🚀 Running data pipeline ==="
-uv run python /ols_ingestion_pipeline.py
+uv run python ./ols_ingestion_pipeline.py
 
 echo "=== ✅ Pipeline run completed successfully ==="
