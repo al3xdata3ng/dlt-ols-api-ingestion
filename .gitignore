@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # dlt configs
-.dlt/
+.dlt/secrets.toml
 
 #logs
 *.log
