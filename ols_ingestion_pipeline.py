@@ -21,8 +21,8 @@ run_params = {
     "SCHEMA_CONTRACT": {"tables": "evolve", "columns": "evolve", "data_type": "evolve"},
     "MAX_ITEMS": 1000,
     "MAX_TIME": 120,
-    "PIPELINE_NAME": "ols_efo_nesting",
-    "DATASET_NAME": "test_nesting",
+    "PIPELINE_NAME": "ols_efo_test_terms_limit",
+    "DATASET_NAME": "test_limit",
     "DESTINATION": "postgres",
     "REFRESH": "drop_sources",
     "PIPELINE_DIR": os.path.join(get_dlt_pipelines_dir(), "dev"),
@@ -80,14 +80,22 @@ class TermWithNesting(Term):
     columns=TermWithNesting,
     schema_contract=run_params["SCHEMA_CONTRACT"],
 )
-def efo_terms():
+def efo_terms(limit=None):
     logger.info("Fetching terms from OLS")
     pages = ols_client.paginate(path=run_params["TERMS_PATH"])
+
+    count = 0  # track how many terms have been yielded
+
     for page in pages:
         for term in page:
+            if limit is not None and count >= limit:
+                logger.info(f"Reached limit of {limit} terms. Stopping fetch.")
+                return  # stop the generator
+
             database_cross_reference = term.get("annotation", {}).get(
                 "database_cross_reference", []
             )
+
             record = Term(
                 iri=term.get("iri"),
                 label=term.get("label"),
@@ -97,7 +105,9 @@ def efo_terms():
                 parent_url=term.get("_links", {}).get("parents", {}).get("href"),
                 mesh_ref=[ref for ref in database_cross_reference if "MESH" in ref],
             )
+
             yield record.model_dump()
+            count += 1
 
 
 @dlt.transformer(
@@ -139,9 +149,11 @@ if __name__ == "__main__":
     )
 
     load_info = pipeline.run(
-        efo_terms().add_limit(
-            max_items=run_params["MAX_ITEMS"], max_time=run_params["MAX_TIME"]
-        ),
+        # efo_terms(limit=100).add_limit(
+        #     max_items=run_params["MAX_ITEMS"], max_time=run_params["MAX_TIME"]
+        # ),
+        # efo_terms(limit=100) | efo_terms_parents,
+        efo_terms(limit=10),
         refresh=run_params["REFRESH"],
     )
     logger.info("Pipeline finished successfully")
