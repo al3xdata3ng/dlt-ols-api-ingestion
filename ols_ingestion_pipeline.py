@@ -16,11 +16,19 @@ run_params = {
     "TERMS_PATH": "/terms",
     "TERMS_TABLE_NAME": "terms",
     "TERMS_PARENTS_TABLE_NAME": "terms_parents",
+    "TERMS_PARENTS_REFERENCES": [
+        {
+            "referenced_table": "terms",
+            "columns": ["child_iri"],
+            "referenced_columns": ["iri"],
+        }
+    ],
     "WRITE_DISPOSITION": "merge",
     "MAX_NESTING": 1,
     "SCHEMA_CONTRACT": {"tables": "evolve", "columns": "evolve", "data_type": "evolve"},
     "MAX_ITEMS": 1000,
     "MAX_TIME": 120,
+    "LIMIT": 500,
     "PIPELINE_NAME": "ols_efo_test_terms_limit",
     "DATASET_NAME": "test_limit",
     "DESTINATION": "postgres",
@@ -71,68 +79,78 @@ class TermWithNesting(Term):
     dlt_config: ClassVar[DltConfig] = {"skip_nested_types": True}
 
 
-# --- 3️⃣ Root resource: terms ---
-@dlt.resource(
-    name=run_params["TERMS_TABLE_NAME"],
-    write_disposition=run_params["WRITE_DISPOSITION"],
-    max_table_nesting=run_params["MAX_NESTING"],
-    primary_key="iri",
-    columns=TermWithNesting,
-    schema_contract=run_params["SCHEMA_CONTRACT"],
-)
-def efo_terms(limit=None):
-    logger.info("Fetching terms from OLS")
-    pages = ols_client.paginate(path=run_params["TERMS_PATH"])
+@dlt.source(name="ols_efo_source")
+def efo_source():
+    """
+    Defines the EFO source consisting of:
+    - efo_terms: root resource that fetches ontology terms
+    - efo_terms_parents: transformer that fetches parent terms for each term
+    """
 
-    count = 0  # track how many terms have been yielded
+    # --- 3️⃣ Root resource: terms ---
+    @dlt.resource(
+        name=run_params["TERMS_TABLE_NAME"],
+        write_disposition=run_params["WRITE_DISPOSITION"],
+        max_table_nesting=run_params["MAX_NESTING"],
+        primary_key="iri",
+        columns=TermWithNesting,
+        schema_contract=run_params["SCHEMA_CONTRACT"],
+    )
+    def efo_terms(limit=10):
+        logger.info("Fetching terms from OLS")
+        pages = ols_client.paginate(path=run_params["TERMS_PATH"])
 
-    for page in pages:
-        for term in page:
-            if limit is not None and count >= limit:
-                logger.info(f"Reached limit of {limit} terms. Stopping fetch.")
-                return  # stop the generator
+        count = 0  # track how many terms have been yielded
 
-            database_cross_reference = term.get("annotation", {}).get(
-                "database_cross_reference", []
-            )
+        for page in pages:
+            for term in page:
+                if limit is not None and count >= limit:
+                    logger.info(f"Reached limit of {limit} terms. Stopping fetch.")
+                    return  # stop the generator
 
-            record = Term(
-                iri=term.get("iri"),
-                label=term.get("label"),
-                short_form=term.get("short_form"),
-                ontology_name=term.get("ontology_name"),
-                synonyms=term.get("synonyms"),
-                parent_url=term.get("_links", {}).get("parents", {}).get("href"),
-                mesh_ref=[ref for ref in database_cross_reference if "MESH" in ref],
-            )
+                database_cross_reference = term.get("annotation", {}).get(
+                    "database_cross_reference", []
+                )
 
-            yield record.model_dump()
-            count += 1
+                record = Term(
+                    iri=term.get("iri"),
+                    label=term.get("label"),
+                    short_form=term.get("short_form"),
+                    ontology_name=term.get("ontology_name"),
+                    synonyms=term.get("synonyms"),
+                    parent_url=term.get("_links", {}).get("parents", {}).get("href"),
+                    mesh_ref=[ref for ref in database_cross_reference if "MESH" in ref],
+                )
 
+                yield record.model_dump()
+                count += 1
 
-@dlt.transformer(
-    data_from=efo_terms,
-    name=run_params["TERMS_PARENTS_TABLE_NAME"],
-    write_disposition=run_params["WRITE_DISPOSITION"],
-    max_table_nesting=run_params["MAX_NESTING"],
-    primary_key="iri",
-    columns=Term,
-    schema_contract=run_params["SCHEMA_CONTRACT"],
-    parallelized=True,
-)
-def efo_terms_parents(term):
-    if not term.get("parent_url"):
-        return
-    response = requests.get(term["parent_url"]).json()
-    for parent in response.get("_embedded", {}).get("terms", []):
-        yield {
-            "iri": parent.get("iri"),
-            "label": parent.get("label"),
-            "short_form": parent.get("short_form"),
-            "ontology_name": parent.get("ontology_name"),
-            "synonyms": parent.get("synonyms"),
-            "child_iri": term["iri"],
-        }
+    @dlt.transformer(
+        data_from=efo_terms,
+        name=run_params["TERMS_PARENTS_TABLE_NAME"],
+        write_disposition=run_params["WRITE_DISPOSITION"],
+        max_table_nesting=run_params["MAX_NESTING"],
+        primary_key="iri",
+        columns=TermWithNesting,
+        schema_contract=run_params["SCHEMA_CONTRACT"],
+        parallelized=True,
+        references=run_params["TERMS_PARENTS_REFERENCES"],
+    )
+    def efo_terms_parents(term):
+        if not term.get("parent_url"):
+            return
+        response = requests.get(term["parent_url"]).json()
+        for parent in response.get("_embedded", {}).get("terms", []):
+            yield {
+                "iri": parent.get("iri"),
+                "label": parent.get("label"),
+                "short_form": parent.get("short_form"),
+                "ontology_name": parent.get("ontology_name"),
+                "synonyms": parent.get("synonyms"),
+                "child_iri": term["iri"],
+            }
+
+    return efo_terms, efo_terms_parents
 
 
 # --- 7️⃣ Pipeline runner with progress bar ---
@@ -149,11 +167,7 @@ if __name__ == "__main__":
     )
 
     load_info = pipeline.run(
-        # efo_terms(limit=100).add_limit(
-        #     max_items=run_params["MAX_ITEMS"], max_time=run_params["MAX_TIME"]
-        # ),
-        # efo_terms(limit=100) | efo_terms_parents,
-        efo_terms(limit=10),
+        efo_source(),
         refresh=run_params["REFRESH"],
     )
     logger.info("Pipeline finished successfully")
