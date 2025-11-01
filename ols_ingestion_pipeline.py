@@ -28,9 +28,9 @@ run_params = {
     "SCHEMA_CONTRACT": {"tables": "evolve", "columns": "evolve", "data_type": "evolve"},
     "MAX_ITEMS": 1000,
     "MAX_TIME": 120,
-    "LIMIT": 500,
-    "PIPELINE_NAME": "ols_efo_test_terms_limit",
-    "DATASET_NAME": "test_limit",
+    "LIMIT": 5000,
+    "PIPELINE_NAME": "ols_efo_parents",
+    "DATASET_NAME": "efo",
     "DESTINATION": "postgres",
     "REFRESH": "drop_sources",
     "PIPELINE_DIR": os.path.join(get_dlt_pipelines_dir(), "dev"),
@@ -80,7 +80,7 @@ class TermWithNesting(Term):
 
 
 @dlt.source(name="ols_efo_source")
-def efo_source():
+def efo_source(term_limit=None):
     """
     Defines the EFO source consisting of:
     - efo_terms: root resource that fetches ontology terms
@@ -96,7 +96,7 @@ def efo_source():
         columns=TermWithNesting,
         schema_contract=run_params["SCHEMA_CONTRACT"],
     )
-    def efo_terms(limit=10):
+    def efo_terms(limit=term_limit):
         logger.info("Fetching terms from OLS")
         pages = ols_client.paginate(path=run_params["TERMS_PATH"])
 
@@ -146,7 +146,6 @@ def efo_source():
                 "label": parent.get("label"),
                 "short_form": parent.get("short_form"),
                 "ontology_name": parent.get("ontology_name"),
-                "synonyms": parent.get("synonyms"),
                 "child_iri": term["iri"],
             }
 
@@ -167,7 +166,7 @@ if __name__ == "__main__":
     )
 
     load_info = pipeline.run(
-        efo_source(),
+        efo_source(term_limit=run_params["LIMIT"]),
         refresh=run_params["REFRESH"],
     )
     logger.info("Pipeline finished successfully")
