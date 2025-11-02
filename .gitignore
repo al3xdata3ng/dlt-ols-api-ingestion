@@ -13,4 +13,4 @@ wheels/
 .dlt/secrets.toml
 
 #logs
-*.log
+.logs/*.log
