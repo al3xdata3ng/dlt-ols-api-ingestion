@@ -10,6 +10,83 @@ from dlt.common.runtime.collector import TqdmCollector
 import logging
 import sys
 import os
+from datetime import datetime
+import json
+
+def log_pipeline_summary(pipeline, load_info):
+    """Log and pretty print a readable summary of the pipeline run."""
+
+    logger.info("🚀 PIPELINE EXECUTION SUMMARY")
+    logger.info("=" * 70)
+
+    started_at = (
+        load_info.started_at.strftime('%Y-%m-%d %H:%M:%S')
+        if isinstance(load_info.started_at, datetime)
+        else load_info.started_at
+    )
+
+    logger.info(f"🕒 Started at: {started_at}")
+    logger.info(f"📦 Pipeline name: {pipeline.pipeline_name}")
+    logger.info(f"💾 Destination: {pipeline.destination}")
+    logger.info("=" * 70)
+
+    # Extract info
+    logger.info("🧩 Extract Information")
+    logger.info(pipeline.last_trace.last_extract_info)
+
+    # Normalize info
+    logger.info("🧮 Normalization Information")
+    logger.info(pipeline.last_trace.last_normalize_info)
+    logger.info("📈 Row counts by table:")
+    logger.info(json.dumps(pipeline.last_trace.last_normalize_info.row_counts, indent=4))
+
+    # Load info
+    logger.info("🚚 Load Information")
+    logger.info(pipeline.last_trace.last_load_info)
+
+    logger.info("✅ Pipeline completed successfully")
+    logger.info("=" * 70 + "\n")
+
+def pretty_print_pipeline_info(pipeline, load_info):
+    print("\n" + "=" * 80)
+    print("🚀 PIPELINE EXECUTION SUMMARY")
+    print("=" * 80)
+
+    print(f"🕒 Started at: {load_info.started_at.strftime('%Y-%m-%d %H:%M:%S') if isinstance(load_info.started_at, datetime) else load_info.started_at}")
+    print(f"📦 Pipeline name: {pipeline.pipeline_name}")
+    print(f"💾 Destination: {pipeline.destination}")
+    print()
+
+    # # --- Trace summary ---
+    # print("📊 TRACE SUMMARY")
+    # print("-" * 80)
+    # print(json.dumps(pipeline.last_trace.asdict(), indent=4, default=str))
+    # print()
+
+    # --- Extract info ---
+    print("🧩 EXTRACT INFORMATION")
+    print("-" * 80)
+    print(pipeline.last_trace.last_extract_info)
+    print()
+
+    # --- Normalize info ---
+    print("🧮 NORMALIZATION INFORMATION")
+    print("-" * 80)
+    print(pipeline.last_trace.last_normalize_info)
+    print()
+    print("📈 Row counts by table:")
+    print(json.dumps(pipeline.last_trace.last_normalize_info.row_counts, indent=4))
+    print()
+
+    # --- Load info ---
+    print("🚚 LOAD INFORMATION")
+    print("-" * 80)
+    print(pipeline.last_trace.last_load_info)
+    print()
+
+    print("✅ Pipeline completed successfully!")
+    print("=" * 80 + "\n")
+
 
 run_params = {
     "BASE_URL": "https://www.ebi.ac.uk/ols4/api/ontologies/efo",
@@ -28,7 +105,7 @@ run_params = {
     "SCHEMA_CONTRACT": {"tables": "evolve", "columns": "evolve", "data_type": "evolve"},
     "MAX_ITEMS": 1000,
     "MAX_TIME": 120,
-    "LIMIT": 5000,
+    "LIMIT": None,
     "PIPELINE_NAME": "ols_efo_parents",
     "DATASET_NAME": "efo",
     "DESTINATION": "postgres",
@@ -43,10 +120,17 @@ ols_client = RESTClient(
     data_selector="_embedded.terms",  # (2)
 )
 
+# Configure root logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
-# --- 1️⃣ Configure logging ---
-logger = logging.getLogger("ols_efo_pipeline")
-logger.setLevel(logging.INFO)
+# # --- 1️⃣ Configure logging ---
+# logger = logging.getLogger("ols_efo_pipeline")
+# logger.setLevel(logging.INFO)
 
 # Console handler
 console_handler = logging.StreamHandler(sys.stdout)
@@ -55,7 +139,7 @@ console_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s
 console_handler.setFormatter(console_formatter)
 
 # File handler
-file_handler = logging.FileHandler("ols_efo_pipeline.log")
+file_handler = logging.FileHandler("./.logs/ols_efo_pipeline.log")
 file_handler.setLevel(logging.INFO)
 file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 file_handler.setFormatter(file_formatter)
@@ -171,3 +255,7 @@ if __name__ == "__main__":
     )
     logger.info("Pipeline finished successfully")
     logger.info(load_info)
+
+
+    pretty_print_pipeline_info(pipeline, load_info)
+    # log_pipeline_summary(pipeline, load_info)
