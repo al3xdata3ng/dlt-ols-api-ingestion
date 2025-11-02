@@ -1,5 +1,4 @@
 import dlt
-from dlt.common.runtime.collector import TqdmCollector
 import logging
 import sys
 from efo_pipeline_config import EfoPipelineConfig
