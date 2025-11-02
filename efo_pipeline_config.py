@@ -1,3 +1,4 @@
+from typing import Optional
 from dlt.common.pipeline import get_dlt_pipelines_dir
 from dataclasses import dataclass
 import os
@@ -10,4 +11,4 @@ class EfoPipelineConfig:
     DATASET_NAME: str = "efo"
     PIPELINE_DIR: str = os.path.join(get_dlt_pipelines_dir(), "dev")
     PROGRESS: str = "tqdm"
-    REFRESH: str = "drop_sources"
+    REFRESH: Optional[str] = None

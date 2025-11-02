@@ -80,9 +80,12 @@ The pipeline can be configured through the following files:
 - `efo_source_config.py`: Source-specific configuration including API endpoints and table names
 
 Key configuration options:
-- `LIMIT`: Number of terms to retrieve (set to `None` for all terms - default value: `1000`)
-- `WRITE_DISPOSITION`: Set to "merge" for incremental updates
-- `PARALLELIZED`: Enable/disable parallel processing of parent terms
+- `source`
+  - `LIMIT`: Number of terms to retrieve (set to `None` for all terms - default value: `1000`)
+  - `WRITE_DISPOSITION`: Set to "merge" for incremental updates 
+  - `PARALLELIZED`: Enable/disable parallel processing of parent terms
+- `pipeline`
+  - `REFRESH`: when set to `drop_sources` it performs a full load
 
 ## 📈 Monitoring
 
