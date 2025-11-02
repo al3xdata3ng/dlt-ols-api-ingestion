@@ -1,0 +1,7 @@
+2025-11-02 16:53:01,957 - INFO - Starting OLS EFO ingestion pipeline
+2025-11-02 16:53:20,456 - INFO - Starting OLS EFO ingestion pipeline
+2025-11-02 16:53:37,140 - INFO - Pipeline finished successfully
+2025-11-02 16:53:37,140 - INFO - Pipeline efo_ingestion_pipeline load step completed in 0.23 seconds
+1 load package(s) were loaded to destination postgres and into dataset efo
+The postgres destination used postgresql://vitalex:***@localhost:5432/olsdb location to store data
+Load package 1762095200.6133928 is LOADED and contains no failed jobs

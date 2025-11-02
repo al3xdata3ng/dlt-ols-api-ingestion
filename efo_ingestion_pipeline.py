@@ -7,8 +7,6 @@ from efo_source import efo_source
 
 efo_pipeline_config = EfoPipelineConfig()
 
-print(f"./.logs/{efo_pipeline_config.PIPELINE_NAME}.log")
-
 # --- 1️⃣ Configure logging ---
 logger = logging.getLogger(efo_pipeline_config.PIPELINE_NAME)
 logger.setLevel(logging.INFO)

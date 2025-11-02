@@ -1,6 +1,6 @@
 # OLS EFO Data Pipeline
 
-This project implements a data pipeline that retrieves EFO (Experimental Factor Ontology) terms from the Ontology Lookup Service (OLS) and stores them in a PostgreSQL database.
+This project implements a data pipeline using the DLT (Data Load Tool) framework to retrieve EFO (Experimental Factor Ontology) terms from the Ontology Lookup Service (OLS) and store them in a PostgreSQL database. DLT provides efficient data loading capabilities with built-in support for incremental updates, schema management, and data integrity checks.
 
 ## Prerequisites
 
@@ -9,14 +9,7 @@ This project implements a data pipeline that retrieves EFO (Experimental Factor 
    - Install Docker Compose: [Docker Compose Installation Guide](https://docs.docker.com/compose/install/)
 
 2. **uv (Python Package Installer)**
-   - Install uv for faster package installation:
-     ```bash
-     pip install uv
-     ```
-   - Or using curl:
-     ```bash
-     curl -LsSf https://astral.sh/uv/install.sh | sh
-     ```
+   - Install uv for faster package installation: [uv installation guide] (https://docs.astral.sh/uv/getting-started/installation/)
 
 3. **Environment Setup**
    Create a `.env` file in the root directory with your PostgreSQL configuration:
@@ -54,7 +47,7 @@ This project implements a data pipeline that retrieves EFO (Experimental Factor 
   - `ontology_name`: Parent term ontology name
   - `child_iri` (Foreign Key): Reference to child term in `terms` table
 
-- **terms__synonyms**: Stores parent-child relationships
+- **terms__mesh_ref**: Stores parent-child relationships
   - `value`: Term synonym
   - `_dlt_parent_id`: (Foreign Key): Reference to `_dlt_id` in `terms` table
 
