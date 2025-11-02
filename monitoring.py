@@ -7,7 +7,9 @@ def pretty_print_pipeline_info(pipeline, load_info):
     print("🚀 PIPELINE EXECUTION SUMMARY")
     print("=" * 80)
 
-    print(f"🕒 Started at: {load_info.started_at.strftime('%Y-%m-%d %H:%M:%S') if isinstance(load_info.started_at, datetime) else load_info.started_at}")
+    print(
+        f"🕒 Started at: {load_info.started_at.strftime('%Y-%m-%d %H:%M:%S') if isinstance(load_info.started_at, datetime) else load_info.started_at}"
+    )
     print(f"📦 Pipeline name: {pipeline.pipeline_name}")
     print(f"💾 Destination: {pipeline.destination}")
     print()

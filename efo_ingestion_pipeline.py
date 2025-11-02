@@ -45,4 +45,4 @@ if __name__ == "__main__":
     logger.info("Pipeline finished successfully")
     logger.info(load_info)
 
-    pretty_print_pipeline_info(pipeline, load_info) 
+    pretty_print_pipeline_info(pipeline, load_info)
