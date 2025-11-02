@@ -14,10 +14,7 @@ class EfoBaseConfig(ABC):
         "columns": "evolve",
         "data_type": "evolve"
     })
-    LIMIT: Optional[int] = None
-    DATASET_NAME: str = "efo"
-    DESTINATION: str = "postgres"
-    REFRESH: str = "drop_sources"
+    LIMIT: Optional[int] = 1000
 
 # --- Subclass 1: EFO Terms ---
 @dataclass
