@@ -162,8 +162,7 @@ left join
     efo.terms__mesh_ref tmr 
         on t._dlt_id = tmr._dlt_parent_id 
 where 
-    t.short_form = 'CHEBI_16113'
-    and tmr._dlt_parent_id is not null
+    tmr._dlt_parent_id is not null
 order by 
     1,2,3,4,5,6,7
 limit 100;
