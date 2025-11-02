@@ -115,7 +115,11 @@ Key configuration options:
 
 ### Running the Pipeline
 
-After installing the prerequisites and setting up the environment file:
+After installing the prerequisites:
+
+```bash
+chmod +x run_pipeline.sh
+```
 
 ```bash
 ./run_pipeline.sh
