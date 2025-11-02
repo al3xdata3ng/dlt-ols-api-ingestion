@@ -15,7 +15,7 @@ from efo_source_config import (
     OlsApiClientConfig,
     EfoTermsConfig,
     EfoTermsParentsConfig,
-) 
+)
 
 # --- 1️⃣ Configure logging ---
 logger = logging.getLogger("ols_efo_pipeline")
@@ -28,9 +28,12 @@ efo_terms_parents_config = EfoTermsParentsConfig()
 
 ols_client = RESTClient(
     base_url=ols_client.BASE_URL,
-    paginator=JSONLinkPaginator(next_url_path=ols_client.PAGINATOR_NEXT_URL_PATH),  # (1)
+    paginator=JSONLinkPaginator(
+        next_url_path=ols_client.PAGINATOR_NEXT_URL_PATH
+    ),  # (1)
     data_selector=ols_client.DATA_SELECTOR,  # (2)
 )
+
 
 # --- 2️⃣ Define schemas via Pydantic ---
 class Term(BaseModel):
