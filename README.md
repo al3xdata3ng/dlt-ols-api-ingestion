@@ -34,12 +34,13 @@ The pipeline follows an [Extract, Normalize & Load](https://dlthub.com/docs/refe
 
 The implementation leverages several out-of-the-box features provided by the DLT framework:
 - [Built-in pagination](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic#pagination) support through `JSONLinkPaginator` for efficient data retrieval
+- Generator usage for extraction for avoiding memory overload
 - Request client wrapper with [automatic retry mechanisms](https://dlthub.com/docs/general-usage/http/requests#customizing-retry-settings) (using default configurations)
 - [Schema contract management with Pydantic](https://dlthub.com/docs/general-usage/resource#define-a-schema-with-pydantic) allowing schema evolution in current implementation
 - Use of [dlt.transformer](https://dlthub.com/docs/general-usage/resource#process-resources-with-dlttransformer) decorator for terms' parents extraction.
 - [Parallel processing](https://dlthub.com/docs/general-usage/resource#declare-parallel-and-async-resources) capabilities:
   - Concurrent extraction of parent terms
-- [Postgres destination](https://dlthub.com/docs/dlt-ecosystem/destinations/postgres#install-dlt-with-postgresql)
+- [Postgres destination](https://dlthub.com/docs/dlt-ecosystem/destinations/postgres#install-dlt-with-postgresql) - Loading is multithreaded (20 threads by default).
 - [Merge write disposition](https://dlthub.com/docs/general-usage/merge-loading) loading data to postgres (using default `delete-insert` strategy)
 
 
