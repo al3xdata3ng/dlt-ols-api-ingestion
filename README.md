@@ -97,6 +97,8 @@ Key configuration options:
 
 - **🔍 Data Quality Monitoring**
   - Implement [alerting for schema drifts](https://dlthub.com/docs/general-usage/schema-evolution#alert-schema-changes-to-curate-new-data) to catch API changes early
+
+  - Improve logging
   
 - **Data Lifecycle Management**
   - Explore hard/soft [deletes](https://dlthub.com/docs/general-usage/merge-loading#delete-records)
