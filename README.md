@@ -168,6 +168,7 @@ left join
         on t._dlt_id = tmr._dlt_parent_id 
 where 
     tmr._dlt_parent_id is not null
+    and tp.child_iri is not null
 order by 
     1,2,3,4,5,6,7
 limit 100;
