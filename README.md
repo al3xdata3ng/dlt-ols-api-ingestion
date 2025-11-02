@@ -2,6 +2,26 @@
 
 This project implements a data pipeline using the [DLT (Data Load Tool) framework](https://dlthub.com/) to retrieve EFO (Experimental Factor Ontology) terms from the Ontology Lookup Service (OLS) and store them in a PostgreSQL database. DLT provides efficient data loading capabilities with built-in support for incremental updates, schema management, and data integrity checks.
 
+## Pipeline Design
+
+The pipeline follows an [Extract, Normalize & Load](https://dlthub.com/docs/reference/explainers/how-dlt-works) process:
+
+1. **Extract**: Retrieve data from the OLS API
+   - Fetch EFO terms using paginated API endpoints
+   - Extract term details, synonyms, and parent relationships
+   - Collect MeSH references from cross-references
+
+2. **Normalize**: Normalize the data
+   - Flatten nested JSON structures
+   - Split terms and their relationships into separate tables
+   - Normalize synonyms and MeSH references into dedicated tables
+   - Generate unique identifiers for linking related data
+
+3. **Load**: Store in PostgreSQL
+   - Load data into normalized tables
+   - Maintain referential integrity between related tables
+   - Support incremental updates through merge operations
+
 ## Features
 
 - Retrieves EFO terms, synonyms, and parent-child relationships
@@ -13,12 +33,15 @@ This project implements a data pipeline using the [DLT (Data Load Tool) framewor
 ## DLT Framework Features
 
 The implementation leverages several out-of-the-box features provided by the DLT framework:
-- Built-in pagination support through JSONLinkPaginator for efficient data retrieval
-- Request client wrapper with automatic retry mechanisms (using default configurations)
-- Schema contract management allowing schema evolution in current implementation
-- Parallel processing capabilities:
+- [Built-in pagination](https://dlthub.com/docs/dlt-ecosystem/verified-sources/rest_api/basic#pagination) support through `JSONLinkPaginator` for efficient data retrieval
+- Request client wrapper with [automatic retry mechanisms](https://dlthub.com/docs/general-usage/http/requests#customizing-retry-settings) (using default configurations)
+- [Schema contract management with Pydantic](https://dlthub.com/docs/general-usage/resource#define-a-schema-with-pydantic) allowing schema evolution in current implementation
+- Use of [dlt.transformer](https://dlthub.com/docs/general-usage/resource#process-resources-with-dlttransformer) decorator for terms' parents extraction.
+- [Parallel processing](https://dlthub.com/docs/general-usage/resource#declare-parallel-and-async-resources) capabilities:
   - Concurrent extraction of parent terms
-  - Parallel processing of term data
+- [Postgres destination](https://dlthub.com/docs/dlt-ecosystem/destinations/postgres#install-dlt-with-postgresql)
+- [Merge write disposition](https://dlthub.com/docs/general-usage/merge-loading) loading data to postgres (using default `delete-insert` strategy)
+
 
 ## Database Schema
 
@@ -55,7 +78,7 @@ The pipeline can be configured through the following files:
 - `efo_source_config.py`: Source-specific configuration including API endpoints and table names
 
 Key configuration options:
-- `LIMIT`: Number of terms to retrieve (set to `None` for all terms)
+- `LIMIT`: Number of terms to retrieve (set to `None` for all terms - default value: `1000`)
 - `WRITE_DISPOSITION`: Set to "merge" for incremental updates
 - `PARALLELIZED`: Enable/disable parallel processing of parent terms
 
@@ -71,8 +94,8 @@ Key configuration options:
   - Implement alerting for schema drifts to catch API changes early
   
 - **Data Lifecycle Management**
-  - Add support for handling deleted records through soft deletes
-  - Implement SCD Type 2 for tracking historical changes on `is_obsolete` field
+  - Explore hard/soft [deletes](https://dlthub.com/docs/general-usage/merge-loading#delete-records)
+  - Implement [SCD Type 2](https://dlthub.com/docs/general-usage/merge-loading#scd2-strategy) for tracking historical changes on `is_obsolete` field of the API repsonse or any other field.
   
 - **Performance Optimization**
   - Explore and implement strategies for incremental extraction to reduce API load and processing time
