@@ -165,7 +165,6 @@ left join
     efo.terms__mesh_ref tmr 
         on t._dlt_id = tmr._dlt_parent_id 
 where 
---  tp.iri is not null
     t.short_form = 'CHEBI_16113'
     and tmr._dlt_parent_id is not null
 order by 
