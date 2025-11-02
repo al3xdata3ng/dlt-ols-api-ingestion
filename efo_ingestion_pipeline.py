@@ -4,6 +4,7 @@ import logging
 import sys
 from efo_pipeline_config import EfoPipelineConfig
 from efo_source import efo_source
+from monitoring import pretty_print_pipeline_info
 
 efo_pipeline_config = EfoPipelineConfig()
 
@@ -26,10 +27,8 @@ file_handler.setFormatter(file_formatter)
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-# --- 7️⃣ Pipeline runner with progress bar ---
 if __name__ == "__main__":
     logger.info("Starting OLS EFO ingestion pipeline")
-    # collector = TqdmCollector(single_bar=True, desc="OLS EFO direct load")
 
     pipeline = dlt.pipeline(
         pipeline_name=efo_pipeline_config.PIPELINE_NAME,
@@ -45,3 +44,5 @@ if __name__ == "__main__":
     )
     logger.info("Pipeline finished successfully")
     logger.info(load_info)
+
+    pretty_print_pipeline_info(pipeline, load_info) 
