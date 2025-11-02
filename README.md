@@ -70,6 +70,8 @@ The implementation leverages several out-of-the-box features provided by the DLT
   - `value`: Term mesh database reference
   - `_dlt_parent_id`: (Foreign Key): Reference to `_dlt_id` in `terms` table
 
+In addition to the above columns, DLT generates some extra metadata columns not mentioned above.
+
 ## ⚙️ Configuration
 
 The pipeline can be configured through the following files:
@@ -110,15 +112,6 @@ Key configuration options:
 
 2. **uv (Python Package Installer)**
    - Install uv for faster package installation: [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/)
-
-3. **Environment Setup**
-   Create a `.env` file in the root directory with your PostgreSQL configuration:
-   ```env
-   POSTGRES_USER=your_user
-   POSTGRES_PASSWORD=your_password
-   POSTGRES_DB=your_database
-   POSTGRES_PORT=5432
-   ```
 
 ### Running the Pipeline
 
